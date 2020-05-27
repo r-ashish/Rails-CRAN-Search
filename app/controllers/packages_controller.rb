@@ -1,5 +1,5 @@
 class PackagesController < ActionController::Base
   def list
-    render :json => {list: BuildIndex.new.execute}
+    render :json => {list: IndexBuilder.new.execute}
   end
 end

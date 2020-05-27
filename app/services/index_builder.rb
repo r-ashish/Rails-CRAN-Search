@@ -2,7 +2,7 @@ require 'httparty'
 require 'rubygems/package'
 require 'zlib'
 
-class BuildIndex
+class IndexBuilder
   URL_CRAN_BASE = "https://cran.r-project.org/src/contrib"
   URL_CRAN_PACKAGE_LIST = "#{URL_CRAN_BASE}/PACKAGES"
   NUM_PACKAGES_TO_PARSE = 1
