@@ -27,3 +27,6 @@
 /config/master.key
 
 .bash_history
+.generators
+.rakeTasks
+.idea/
