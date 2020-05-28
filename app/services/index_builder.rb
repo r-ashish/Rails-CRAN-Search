@@ -95,11 +95,11 @@ class IndexBuilder
   end
 
   def resolve_users(authors:, maintainers:)
-    authors_list = authors.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| formatUser(e.strip)}
-    maintainers_list = maintainers.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| formatUser(e.strip)}
+    authors_list = authors.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| format_user(e.strip)}
+    maintainers_list = maintainers.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| format_user(e.strip)}
 
-    guessMissingEmails(authors_list, maintainers_list)
-    guessMissingEmails(maintainers_list, authors_list)
+    guess_missing_emails(authors_list, maintainers_list)
+    guess_missing_emails(maintainers_list, authors_list)
 
     return {
         authors: authors_list,
@@ -107,7 +107,7 @@ class IndexBuilder
     }
   end
 
-  def guessMissingEmails(list1, list2)
+  def guess_missing_emails(list1, list2)
     list1.each do |user|
       next if user[:email].present?
       matching_user = list2.find{|u| u[:name] == user[:name]}
@@ -115,7 +115,7 @@ class IndexBuilder
     end
   end
 
-  def formatUser(user_string)
+  def format_user(user_string)
     regex = /(.*?\s?)<(.*)>/
     match = regex.match(user_string)
     return {name: user_string} unless match.present?
