@@ -11,7 +11,7 @@ That's it!
 
 Now, wait for it to build, index some packages and start the server.
 
-After the server is up and running, you can use: <a>http://localhost:3000/api/packages/?query=</a> to search the packages.
+After the server is up and running, you can use: <a>http://localhost:3000/packages/?query=</a> to search the packages.
 
 # Problem Statement
 
