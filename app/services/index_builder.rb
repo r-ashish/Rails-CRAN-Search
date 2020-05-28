@@ -5,17 +5,21 @@ require 'zlib'
 class IndexBuilder
   URL_CRAN_BASE = "https://cran.r-project.org/src/contrib"
   URL_CRAN_PACKAGE_LIST = "#{URL_CRAN_BASE}/PACKAGES"
-  NUM_PACKAGES_TO_INDEX = 50
+  DEFAULT_NUM_PACKAGES_TO_INDEX = 50
   DESCRIPTION_FILE_NAME = "DESCRIPTION"
   REGEX_PACKAGE_DESCRIPTION = /(.*?):\s([\s\S]*?(?=\n.*:\s))|(.*?):\s(.*)/
 
-  def execute(num_packages=NUM_PACKAGES_TO_INDEX)
-    @num_packages_to_index = num_packages!=0 ? num_packages : NUM_PACKAGES_TO_INDEX
+  def execute(num_packages=DEFAULT_NUM_PACKAGES_TO_INDEX)
+    @num_packages_to_index = num_packages!=0 ? num_packages : DEFAULT_NUM_PACKAGES_TO_INDEX
+
     existing_packages = Package.all.size
     return puts "Skipping indexing, already have #{existing_packages} packages indexed!" if existing_packages >= @num_packages_to_index
+
     Package.destroy_all
     User.destroy_all
+
     puts "Preparing to index #{@num_packages_to_index} packages..."
+
     package_list = fetch_package_list
     package_list.each_with_index do |package, i|
       puts "[#{i+1}/ #{@num_packages_to_index}] Fetching package details"
@@ -95,8 +99,8 @@ class IndexBuilder
   end
 
   def resolve_users(authors:, maintainers:)
-    authors_list = authors.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| format_user(e.strip)}
-    maintainers_list = maintainers.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| format_user(e.strip)}
+    authors_list = authors.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip.present?}.map{|e| format_user(e.strip)}
+    maintainers_list = maintainers.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip.present?}.map{|e| format_user(e.strip)}
 
     guess_missing_emails(authors_list, maintainers_list)
     guess_missing_emails(maintainers_list, authors_list)

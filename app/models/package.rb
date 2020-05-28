@@ -6,7 +6,6 @@ class Package < ApplicationRecord
     where('lower(name) LIKE ?', "%#{query.downcase}%")
   end
 
-
   def as_json
     json = super.as_json
     json[:authors] = self.authors.as_json(except: :id)
