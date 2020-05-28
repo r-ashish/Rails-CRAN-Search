@@ -5,13 +5,25 @@ require 'zlib'
 class IndexBuilder
   URL_CRAN_BASE = "https://cran.r-project.org/src/contrib"
   URL_CRAN_PACKAGE_LIST = "#{URL_CRAN_BASE}/PACKAGES"
-  NUM_PACKAGES_TO_PARSE = 1
+  NUM_PACKAGES_TO_INDEX = 50
   DESCRIPTION_FILE_NAME = "DESCRIPTION"
   REGEX_PACKAGE_DESCRIPTION = /(.*?):\s([\s\S]*?(?=\n.*:\s))|(.*?):\s(.*)/
 
-  def execute
+  def execute(num_packages)
+    @num_packages_to_index = num_packages || NUM_PACKAGES_TO_INDEX
+    existing_packages = Package.all.size
+    return puts "Skipping indexing, already have #{existing_packages} packages indexed!" if existing_packages >= @num_packages_to_index
+    Package.destroy_all
+    User.destroy_all
+    puts "Preparing to index #{@num_packages_to_index} packages..."
     package_list = fetch_package_list
-    package_list.map { |package| fetch_package_details(package) }
+    package_list.each_with_index do |package, i|
+      puts "[#{i+1}/ #{@num_packages_to_index}] Fetching package details"
+      package_details = fetch_package_details(package)
+      puts "[#{i+1}/ #{@num_packages_to_index}] Indexing package #{package_details["Package"]}"
+      index_package(package_details)
+      puts "[#{i+1}/ #{@num_packages_to_index}] Indexing package #{package_details["Package"]} complete"
+    end
   end
 
   private
@@ -29,7 +41,7 @@ class IndexBuilder
   def parse_package_list(response_body)
     packages = response_body.split("\n\n")
     package_list = []
-    (0..NUM_PACKAGES_TO_PARSE-1).each do |i|
+    (0..@num_packages_to_index-1).each do |i|
       package_info = packages[i].split("\n")
       package_list << {
           name: package_info[0].split(":")[1].strip,
@@ -63,5 +75,50 @@ class IndexBuilder
       end
     end
     parsed_description
+  end
+
+  def index_package(package_details)
+    resolved_users = resolve_users(
+        authors: package_details["Author"],
+        maintainers: package_details["Maintainer"]
+    )
+    package = Package.create(
+        name: package_details["Package"],
+        version: package_details["Version"],
+        title: package_details["Title"],
+        description: package_details["Description"],
+        publication_date: package_details["Date/Publication"]
+    )
+    package.set_authors User.find_or_create(resolved_users[:authors])
+    package.set_maintainers User.find_or_create(resolved_users[:maintainers])
+    package.save!
+  end
+
+  def resolve_users(authors:, maintainers:)
+    authors_list = authors.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| formatUser(e.strip)}
+    maintainers_list = maintainers.gsub(/\[.*?\]/, '').split(/,|and/).select{|e| e.strip!=''}.map{|e| formatUser(e.strip)}
+
+    guessMissingEmails(authors_list, maintainers_list)
+    guessMissingEmails(maintainers_list, authors_list)
+
+    return {
+        authors: authors_list,
+        maintainers: maintainers_list
+    }
+  end
+
+  def guessMissingEmails(list1, list2)
+    list1.each do |user|
+      next if user[:email].present?
+      matching_user = list2.find{|u| u[:name] == user[:name]}
+      user[:email] = matching_user[:email] if matching_user[:email]
+    end
+  end
+
+  def formatUser(user_string)
+    regex = /(.*?\s?)<(.*)>/
+    match = regex.match(user_string)
+    return {name: user_string} unless match.present?
+    { name: match[1].strip, email: match[2].strip }
   end
 end
