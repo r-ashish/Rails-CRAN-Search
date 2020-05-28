@@ -1,24 +1,49 @@
-# README
+# Steps for testing locally
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+## Recommended setup (requires Docker)
+> ## Prerequisites:
+> - docker should be installed
 
-Things you may want to cover:
+1. cd to project root
+2. run `docker-compose up`
 
-* Ruby version
+That's it!
 
-* System dependencies
+Now, wait for it to build, index some packages and start the server.
 
-* Configuration
+After the server is up and running, you can use: <a>http://localhost:3000/api/packages/?query=</a> to search the packages.
 
-* Database creation
+# Problem Statement
 
-* Database initialization
+Create an application to fetch & index package details from a CRAN server.
+Also, create a search API to search packages by name.
 
-* How to run the test suite
+----
 
-* Services (job queues, cache servers, search engines, etc.)
+CRAN is a network of ftp and web servers around the world that store identical, up-to-date, versions of code and documentation for R. The R project uses these CRAN Servers to store R packages.
 
-* Deployment instructions
+Every CRAN server contains a plain file listing all the packages in that server which can be accessed using this URL: ​http://cran.r-project.org/src/contrib/PACKAGES
 
-* ...
+### Format of PACKAGES file
+
+[...]
+
+Package: adehabitatHR
+
+Version: 0.4.2
+
+Depends: R (>= 2.10.0), sp, methods, deldir, ade4, adehabitatMA, adehabitatLT Suggests: maptools, tkrplot, MASS, rgeos, gpclib
+
+License: GPL (>= 2)
+
+[...]
+
+### Package URL format
+
+You can build the URL of every R package as:
+> http://cran.rproject.org/src/contrib/[PACKAGE_NAME]_[PACKAGE_VERSION].tar.gz
+
+Example Package URL:
+> http://cran.r-project.org/src/contrib/shape_1.4.1.tar.gz
+
+Inside every package, after you uncompress it, there is a file called DESCRIPTION where you can get some extra information about the package.
