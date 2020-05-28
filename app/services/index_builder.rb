@@ -9,8 +9,8 @@ class IndexBuilder
   DESCRIPTION_FILE_NAME = "DESCRIPTION"
   REGEX_PACKAGE_DESCRIPTION = /(.*?):\s([\s\S]*?(?=\n.*:\s))|(.*?):\s(.*)/
 
-  def execute(num_packages)
-    @num_packages_to_index = num_packages || NUM_PACKAGES_TO_INDEX
+  def execute(num_packages=NUM_PACKAGES_TO_INDEX)
+    @num_packages_to_index = num_packages!=0 ? num_packages : NUM_PACKAGES_TO_INDEX
     existing_packages = Package.all.size
     return puts "Skipping indexing, already have #{existing_packages} packages indexed!" if existing_packages >= @num_packages_to_index
     Package.destroy_all
@@ -22,7 +22,7 @@ class IndexBuilder
       package_details = fetch_package_details(package)
       puts "[#{i+1}/ #{@num_packages_to_index}] Indexing package #{package_details["Package"]}"
       index_package(package_details)
-      puts "[#{i+1}/ #{@num_packages_to_index}] Indexing package #{package_details["Package"]} complete"
+      puts "[#{i+1}/ #{@num_packages_to_index}] Completed indexing package #{package_details["Package"]}"
     end
   end
 
@@ -111,7 +111,7 @@ class IndexBuilder
     list1.each do |user|
       next if user[:email].present?
       matching_user = list2.find{|u| u[:name] == user[:name]}
-      user[:email] = matching_user[:email] if matching_user[:email]
+      user[:email] = matching_user[:email] if matching_user && matching_user[:email]
     end
   end
 
