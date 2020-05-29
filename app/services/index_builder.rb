@@ -15,15 +15,15 @@ class IndexBuilder
     existing_packages = Package.all.size
     return puts "Skipping indexing, already have #{existing_packages} packages indexed!" if existing_packages >= @num_packages_to_index
 
-    Package.destroy_all
-    User.destroy_all
+    clear_index
 
     puts "Preparing to index #{@num_packages_to_index} packages..."
 
     package_list = fetch_package_list
     package_list.each_with_index do |package, i|
       puts "[#{i+1}/ #{@num_packages_to_index}] Fetching package details"
-      package_details = fetch_package_details(package)
+      package_gzip = fetch_package_details(package)
+      package_details = read_package_description(package_gzip)
       puts "[#{i+1}/ #{@num_packages_to_index}] Indexing package #{package_details["Package"]}"
       index_package(package_details)
       puts "[#{i+1}/ #{@num_packages_to_index}] Completed indexing package #{package_details["Package"]}"
@@ -31,6 +31,11 @@ class IndexBuilder
   end
 
   private
+
+  def clear_index
+    Package.destroy_all
+    User.destroy_all
+  end
 
   def fetch_package_list
     response = HTTParty.get(URL_CRAN_PACKAGE_LIST)
@@ -58,7 +63,7 @@ class IndexBuilder
   def fetch_package_details(package)
     url = package_url(name: package[:name], version: package[:version])
     package_gzip = HTTParty.get(url)
-    read_package_description(package_gzip.body)
+    package_gzip.body
   end
 
   def read_package_description(gzip)
@@ -105,10 +110,7 @@ class IndexBuilder
     guess_missing_emails(authors_list, maintainers_list)
     guess_missing_emails(maintainers_list, authors_list)
 
-    return {
-        authors: authors_list,
-        maintainers: maintainers_list
-    }
+    { authors: authors_list, maintainers: maintainers_list }
   end
 
   def guess_missing_emails(list1, list2)
